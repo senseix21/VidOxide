@@ -1,6 +1,6 @@
 mqtt:
   enabled: true
-  host: localhost  # Frigate uses network_mode: host
+  host: mosquitto  # Back to container name since we removed network_mode: host
   port: 1883
   topic_prefix: frigate
   client_id: frigate
@@ -10,10 +10,12 @@ cameras:
   demo:
     ffmpeg:
       inputs:
-        - path: rtsp://localhost:8554/demo  # MediaMTX on host (network_mode: host)
+        - path: rtsp://172.20.0.1:8554/demo  # Docker gateway IP to access host MediaMTX
           roles: [detect, record]
     detect:
       enabled: true
+      fps: 5
+      min_initialized: 1  # Lower threshold
     snapshots:
       enabled: true
     record:
@@ -21,3 +23,7 @@ cameras:
 
 objects:
   track: [person, car]
+  filters:
+    person:
+      min_area: 100  # Very low threshold for testing
+      threshold: 0.5  # Lower confidence threshold

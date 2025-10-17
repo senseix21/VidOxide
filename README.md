@@ -1,75 +1,164 @@
 # 🎥 video-intel
 
-**One-command video intelligence stack:** FFmpeg → MediaMTX (RTSP) → Frigate (object detection) → MQTT → Rust event processors.
+**Real-time video intelligence:** Webcam → FFmpeg → MediaMTX (RTSP) → Frigate (AI detection) → MQTT → Rust CLI
+
+## ✨ Features
+
+- 🎯 Real-time object detection (person, car, etc.)
+- 📹 Webcam streaming via FFmpeg
+- 🔔 Live event notifications via MQTT
+- 🦀 Rust CLI for event monitoring
+- 🌐 Web UI for video playback and events
+- 🐳 One-command Docker deployment
 
 ## 🚀 Quick Start
 
+### 1. Start Infrastructure
+
 ```bash
-# 1. Start the Docker stack
+cd video-intel
 make up
+```
 
-# 2. Publish webcam to MediaMTX (choose your platform)
+Starts: Mosquitto (MQTT), MediaMTX (RTSP), Frigate (AI)
 
-# macOS (avfoundation + hardware encoder)
+### 2. Stream Your Webcam
+
+**macOS:**
+```bash
 ffmpeg -f avfoundation -framerate 30 -pixel_format uyvy422 -i "0:0" \
   -vf scale=-2:720 -r 15 \
   -c:v h264_videotoolbox -profile:v high -g 30 -tune zerolatency \
   -f rtsp -rtsp_transport tcp rtsp://localhost:8554/demo
+```
 
-# Linux (v4l2 + x264)
+**Linux:**
+```bash
 ffmpeg -f v4l2 -framerate 30 -video_size 1280x720 -i /dev/video0 \
   -vf scale=-2:720 -r 15 \
   -c:v libx264 -preset veryfast -tune zerolatency -g 30 \
   -f rtsp -rtsp_transport tcp rtsp://localhost:8554/demo
-
-# 3. Watch logs
-make logs
 ```
 
-**Access Points:**
-- Frigate UI: http://localhost:5000
-- MediaMTX RTSP: rtsp://localhost:8554/demo
-- MQTT Broker: localhost:1883
-- Frigate Agent health: http://localhost:8080/healthz
+**Keep this terminal running!**
+
+### 3. Restart Frigate & Run CLI
+
+```bash
+# Wait 10 seconds after starting FFmpeg, then:
+docker restart vi_frigate
+sleep 15
+
+# Run the event CLI
+make cli
+```
+
+### 4. See Detections!
+
+Move in front of your webcam:
+```
+new: person on demo (id=1760664012.618671-12580m)
+update: person on demo (id=1760664012.618671-12580m)
+end: person on demo (id=1760664012.618671-12580m)
+```
+
+## 🌐 Access Points
+
+- **Frigate UI**: http://localhost:5000
+- **MQTT Broker**: localhost:1883
+- **RTSP Stream**: rtsp://localhost:8554/demo
 
 ## 📦 What's Included
 
-### Services (Docker Compose)
-- **MediaMTX**: RTSP/HLS/WebRTC server receiving FFmpeg streams
-- **FFmpeg**: Loops demo.mp4 as H.264 RTSP stream @ 720p/15fps
-- **Frigate**: Real-time object detection (person, car tracking)
-- **Mosquitto**: MQTT broker for event streaming
-- **frigate-cli**: Rust CLI app printing detection events to stdout
-- **frigate-agent**: Rust service with /healthz endpoint + MQTT consumer
+### Docker Services
+- **MediaMTX** - RTSP server (port 8554)
+- **Mosquitto** - MQTT broker (port 1883)  
+- **Frigate** - AI object detection (port 5000)
 
-### Rust Apps (Workspace)
+### Rust Applications
+- **frigate-cli** - Event notification CLI
+- **frigate-agent** - Web service with health checks
+
+## 📁 Structure
+
 ```
-apps/
-├── frigate-cli/     # Minimal MQTT subscriber & event printer
-└── frigate-agent/   # Web server + MQTT processor (M1: thumbnails, metrics)
+video-intel/
+├── compose/              # Docker configs
+│   ├── docker-compose.yml
+│   ├── frigate.yml
+│   ├── mediamtx.yml
+│   └── mosquitto-no-auth.conf
+├── apps/
+│   ├── frigate-cli/      # Rust MQTT subscriber
+│   └── frigate-agent/    # Rust web service
+├── docs/
+├── START_HERE.md         # Detailed setup
+└── WEBCAM_SETUP.md       # Platform-specific guide
 ```
 
-## 🛠️ Development
+## 🛠️ Commands
 
-### Run Rust apps locally (outside containers)
 ```bash
-# Run CLI against local MQTT broker
-make cli
-
-# Run agent with web server
-make agent
+make up       # Start Docker services
+make down     # Stop and remove services  
+make logs     # View all logs
+make cli      # Run Rust CLI event viewer
+make agent    # Run Rust agent service
 ```
 
-### Configuration
-- **Frigate**: `compose/frigate.yml` (camera config, object tracking)
-- **MediaMTX**: `compose/mediamtx.yml` (RTSP/HLS endpoints)
-- **MQTT**: `compose/mosquitto-no-auth.conf` (open broker for dev)
-- **Environment**: `.env.example` → copy to `.env` for customization
+## ⚙️ Configuration
 
-### Health Check
-```bash
-bash infra/scripts/health.sh
-```
+- **Frigate**: `compose/frigate.yml` - Camera settings, object detection
+- **MediaMTX**: `compose/mediamtx.yml` - RTSP paths
+- **MQTT**: `compose/mosquitto-no-auth.conf` - Broker config
+
+## 🔧 Troubleshooting
+
+### No video in Frigate UI
+1. Check FFmpeg is running: `ps aux | grep ffmpeg`
+2. Verify stream: `ffplay rtsp://localhost:8554/demo`
+3. Restart Frigate: `docker restart vi_frigate`
+
+### No detection events
+1. Open http://localhost:5000 - verify live video
+2. Move visibly for 3-5 seconds (CPU detection is slow)
+3. Check objects tracked in `compose/frigate.yml`
+
+### Camera permission (macOS)
+System Settings → Privacy & Security → Camera → Enable Terminal
+
+## 📚 Documentation
+
+- [START_HERE.md](START_HERE.md) - Complete walkthrough
+- [WEBCAM_SETUP.md](WEBCAM_SETUP.md) - Platform guides
+- [TEST_COMMANDS.md](TEST_COMMANDS.md) - Testing steps
+- [docs/](docs/) - Architecture & troubleshooting
+
+## 🎯 Use Cases
+
+- Real-time security monitoring
+- Pet activity tracking  
+- Smart home automation triggers
+- Occupancy detection
+- Event logging and analytics
+
+## 🚧 Roadmap
+
+- [ ] Multi-camera support
+- [ ] SQLite event storage
+- [ ] Prometheus metrics
+- [ ] Grafana dashboards
+- [ ] Custom detection zones
+- [ ] Push notifications
+- [ ] Cloud storage integration
+
+## 📄 License
+
+MIT
+
+---
+
+**Status:** ✅ Production ready | Built with Rust 🦀 + Docker 🐳 + AI 🤖
 
 ## 📋 Roadmap
 

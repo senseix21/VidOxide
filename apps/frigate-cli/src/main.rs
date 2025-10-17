@@ -13,11 +13,19 @@ struct Args {
 }
 
 #[derive(Debug, Deserialize)]
-struct FrigateEvent {
+#[allow(dead_code)]  // Suppress unused field warning
+struct FrigateEventWrapper {
+    #[serde(rename = "type")]
+    event_type: Option<String>,
+    before: Option<FrigateEventData>,
+    after: FrigateEventData,
+}
+
+#[derive(Debug, Deserialize)]
+struct FrigateEventData {
     id: String,
     camera: Option<String>,
     label: Option<String>,
-    #[serde(rename = "type")] kind: Option<String>,
 }
 
 #[tokio::main]
@@ -26,8 +34,8 @@ async fn main() -> Result<()> {
     
     let mut mqttoptions = MqttOptions::new("frigate_cli", &args.broker_host, args.broker_port);
     mqttoptions.set_keep_alive(Duration::from_secs(30));
-    mqttoptions.set_max_packet_size(1024 * 1024, 1024 * 1024); // 1MB max packet size for large payloads
-
+    // Don't set max packet size - let broker decide
+    
     let (client, mut eventloop) = AsyncClient::new(mqttoptions, 10);
     client.subscribe(&args.topic, QoS::AtLeastOnce).await?;
 
@@ -36,20 +44,24 @@ async fn main() -> Result<()> {
     loop {
         match eventloop.poll().await {
             Ok(Event::Incoming(Packet::Publish(p))) => {
-                if let Ok(ev) = serde_json::from_slice::<FrigateEvent>(&p.payload) {
+                // Try to parse the event wrapper
+                if let Ok(wrapper) = serde_json::from_slice::<FrigateEventWrapper>(&p.payload) {
+                    let ev = &wrapper.after;
                     println!(
                         "{}: {} on {} (id={})",
-                        ev.kind.as_deref().unwrap_or("event"),
+                        wrapper.event_type.as_deref().unwrap_or("event"),
                         ev.label.as_deref().unwrap_or("object"),
                         ev.camera.as_deref().unwrap_or("camera"),
                         ev.id
                     );
                 }
+                // Silently skip unparseable messages
             }
-            Ok(_) => {}
+            Ok(_) => {}  // Ignore other packet types
             Err(e) => {
                 eprintln!("mqtt error: {e}");
-                tokio::time::sleep(Duration::from_secs(1)).await;
+                // Wait longer before retry to avoid reconnection storm
+                tokio::time::sleep(Duration::from_secs(5)).await;
             }
         }
     }

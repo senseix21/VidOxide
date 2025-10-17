@@ -31,7 +31,8 @@ services:
     image: ghcr.io/blakeblackshear/frigate:stable
     container_name: vi_frigate
     depends_on: [mosquitto, mediamtx]
-    network_mode: "host"  # Allow Frigate to access host MediaMTX
+    ports:
+      - "5000:5000"
     shm_size: "256m"
     environment:
       FRIGATE_RTSP_PASSWORD: "unused"
