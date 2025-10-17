@@ -147,3 +147,4 @@ MIT
 ---
 
 **Built for real-time video intelligence at scale.**
+# video-intel
