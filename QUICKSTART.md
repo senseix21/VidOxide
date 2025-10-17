@@ -1,98 +1,121 @@
-# 🚀 Quick Start Guide
+# 🚀 Quick Start - Video Intelligence
 
-## Current Status
-Docker is pulling images (Frigate is ~500MB, takes 5-10 min on first run).
+Get your video intelligence system running in 3 minutes!
 
-## What's Happening
+## Step 1: Start Infrastructure (30 seconds)
+
 ```bash
-make up  # Running now - pulling:
-  ✅ mosquitto (2MB) 
-  ✅ mediamtx (20MB)
-  ✅ ffmpeg (50MB)
-  ⏳ frigate (500MB) <- downloading now
+cd video-intel
+make up
 ```
 
-## Once `make up` Completes
-
-### 1. Check Services
-```bash
-docker ps --filter "name=vi_"
-# Should show 5 containers running
+Wait for containers to start. You should see:
+```
+✔ Container vi_mosquitto  Started
+✔ Container vi_mediamtx   Started
+✔ Container vi_frigate    Started
 ```
 
-### 2. View Logs
+## Step 2: Stream Webcam (10 seconds to start)
+
+**Open a NEW terminal** and run:
+
+### macOS:
 ```bash
-make logs
-# Watch detection events in real-time
+ffmpeg -f avfoundation -framerate 30 -pixel_format uyvy422 -i "0:0" \
+  -vf scale=-2:720 -r 15 \
+  -c:v h264_videotoolbox -profile:v high -g 30 -tune zerolatency \
+  -f rtsp -rtsp_transport tcp rtsp://localhost:8554/demo
 ```
 
-### 3. Access UIs
-- **Frigate**: http://localhost:5000
-- **MediaMTX stats**: http://localhost:8888  
-- **Agent health**: http://localhost:8080/healthz
-
-### 4. Test RTSP Stream
+### Linux:
 ```bash
-# Use VLC or ffplay
-ffplay rtsp://localhost:8554/demo
-
-# Or curl MediaMTX
-curl http://localhost:8888
+ffmpeg -f v4l2 -framerate 30 -video_size 1280x720 -i /dev/video0 \
+  -vf scale=-2:720 -r 15 \
+  -c:v libx264 -preset veryfast -tune zerolatency -g 30 \
+  -f rtsp -rtsp_transport tcp rtsp://localhost:8554/demo
 ```
 
-### 5. Run Rust Apps Locally (Development)
+**Leave this running!** You should see:
+```
+frame=   50 fps= 14 q=-0.0 size=N/A time=00:00:03.26 bitrate=N/A
+```
+
+## Step 3: Restart Frigate (20 seconds)
+
+**Open a 3rd terminal:**
+
 ```bash
-# Terminal 1: CLI subscriber
+docker restart vi_frigate
+sleep 15
+```
+
+## Step 4: Run Event CLI
+
+In the same terminal:
+
+```bash
+cd video-intel
 make cli
-# Prints events like: "new: person on demo (id=abc123)"
-
-# Terminal 2: Agent with web server
-make agent
-# Access: http://localhost:8080/healthz
 ```
+
+You should see:
+```
+subscribed to localhost:1883 topic frigate/events
+```
+
+## Step 5: Test Detection! 👋
+
+**Move in front of your webcam!**
+
+You'll see events appear:
+```
+new: person on demo (id=1760664012.618671-12580m)
+update: person on demo (id=1760664012.618671-12580m)
+update: person on demo (id=1760664012.618671-12580m)
+end: person on demo (id=1760664012.618671-12580m)
+```
+
+## Step 6: View in Browser
+
+Open: http://localhost:5000
+
+You'll see:
+- Live webcam feed
+- Bounding boxes around detected objects
+- Event list on the right
+
+---
+
+## 🎉 That's it!
+
+Your video intelligence system is now running with:
+- ✅ Real-time object detection
+- ✅ MQTT event streaming
+- ✅ Rust CLI notifications
+- ✅ Web UI for monitoring
+
+## Next Steps
+
+- Configure detection in `compose/frigate.yml`
+- Add more objects to track: `track: [person, car, dog, cat]`
+- Lower threshold for easier detection: `threshold: 0.4`
+- Build your own event processor using the MQTT stream
 
 ## Troubleshooting
 
-### Docker pull slow?
-```bash
-# Check progress
-docker ps -a
+**No video?**
+- Check FFmpeg is running: `ps aux | grep ffmpeg`
+- Verify stream: `ffplay rtsp://localhost:8554/demo`
 
-# Or monitor in another terminal
-cd compose && docker compose logs -f
-```
+**No events?**
+- Make sure you're visible in frame for 3-5 seconds
+- CPU detection is slower - be patient!
+- Check Frigate UI shows video
 
-### Port conflicts?
-```bash
-# Check what's using ports
-lsof -i :5000 -i :8554 -i :1883
+**Camera permission denied? (macOS)**
+System Settings → Privacy & Security → Camera → Enable Terminal
 
-# Kill native MediaMTX if still running
-pkill mediamtx
-```
+---
 
-### Start fresh
-```bash
-make down  # Stop & clean
-make up    # Restart
-```
-
-## Expected First-Run Timeline
-- Image pull: 5-10 min (first time only)
-- Container start: 30 sec
-- Frigate init: 10-20 sec
-- FFmpeg connect: 5 sec
-- First detection: ~10 sec after video starts
-
-## Success Indicators
-✅ `docker ps` shows 5 containers  
-✅ Frigate UI loads at localhost:5000  
-✅ `make logs` shows "person detected" events  
-✅ `make cli` prints MQTT messages  
-
-## Next Steps (After Stack is Running)
-1. Open Frigate UI: http://localhost:5000
-2. Click "demo" camera to see live feed
-3. Watch Events tab for detections
-4. Run `make cli` to see MQTT events
-5. Edit code in `apps/` and re-run with `make cli/agent`
+**Need help?** See [README.md](README.md) for full documentation.
