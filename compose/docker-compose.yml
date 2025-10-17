@@ -1,0 +1,46 @@
+version: "3.9"
+
+x-common-env: &common_env {}
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: vi_mosquitto
+    command: ["/bin/sh","-lc","mosquitto -c /mosquitto-no-auth.conf"]
+    volumes:
+      - ./mosquitto-no-auth.conf:/mosquitto-no-auth.conf:ro
+    ports:
+      - "1883:1883"
+    restart: unless-stopped
+
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    container_name: vi_mediamtx
+    volumes:
+      - ./mediamtx.yml:/mediamtx.yml:ro
+    ports:
+      - "8554:8554"   # RTSP
+      # - "8888:8888"   # HLS (optional, commented due to port conflict)
+      # - "8889:8889"   # WebRTC (optional)
+    restart: unless-stopped
+
+  # NOTE: Webcam publishing is done from HOST via FFmpeg
+  # See README.md for platform-specific ffmpeg commands
+
+  frigate:
+    image: ghcr.io/blakeblackshear/frigate:stable
+    container_name: vi_frigate
+    depends_on: [mosquitto, mediamtx]
+    network_mode: "host"  # Allow Frigate to access host MediaMTX
+    shm_size: "256m"
+    environment:
+      FRIGATE_RTSP_PASSWORD: "unused"
+    volumes:
+      - ./frigate.yml:/config/config.yml:ro
+      - type: tmpfs
+        target: /tmp/cache
+        tmpfs: { size: 536870912 }
+    restart: unless-stopped
+
+  # To run frigate_cli: use `make cli` to run locally on host
+  # (faster iteration, no container rebuild needed)

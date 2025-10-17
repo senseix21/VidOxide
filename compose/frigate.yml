@@ -1,0 +1,23 @@
+mqtt:
+  enabled: true
+  host: localhost  # Frigate uses network_mode: host
+  port: 1883
+  topic_prefix: frigate
+  client_id: frigate
+  stats_interval: 60
+
+cameras:
+  demo:
+    ffmpeg:
+      inputs:
+        - path: rtsp://localhost:8554/demo  # MediaMTX on host (network_mode: host)
+          roles: [detect, record]
+    detect:
+      enabled: true
+    snapshots:
+      enabled: true
+    record:
+      enabled: false
+
+objects:
+  track: [person, car]

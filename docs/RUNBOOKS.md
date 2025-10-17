@@ -1,0 +1,4 @@
+- Start: `make up`
+- View UI: `http://localhost:5000`
+- Watch MQTT: `docker exec -it vi_mosquitto sh -lc "mosquitto_sub -t 'frigate/#' -v"`
+- Stop: `make down`

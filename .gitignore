@@ -1,0 +1,19 @@
+# Rust
+/target
+**/*.rs.bk
+
+# Node/Web (future UI)
+node_modules
+
+# Editor/OS
+.DS_Store
+.idea/
+.vscode/
+
+# Docker
+**/.env
+.env
+
+# Local media/artifacts
+media/*.mp4
+out/

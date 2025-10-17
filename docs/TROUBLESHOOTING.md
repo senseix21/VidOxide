@@ -1,0 +1,3 @@
+- Black video: ensure `mediamtx.yml` has `paths: all_others: {}` and Frigate points to `rtsp://mediamtx:8554/demo`.
+- No events: move subject in frame; reduce detect size; check Frigate logs.
+- Port conflict: change `8554/5000/1883` in compose.

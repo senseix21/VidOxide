@@ -1,0 +1,4 @@
+- M0 Boot: stack + CLI (done)
+- M1 Agent v0: thumbnails, /healthz, Prom metrics
+- M2 Storage & rules: SQLite/Postgres, S3, dedupe
+- M3 Ops: CI, auth, TLS, dashboards

@@ -1,0 +1,6 @@
+[workspace]
+members = [
+  "apps/frigate-cli",
+  "apps/frigate-agent"
+]
+resolver = "2"
