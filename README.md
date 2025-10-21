@@ -1,9 +1,9 @@
-# 🎥 video-intel
+```markdown
+# VidOxide
 
 **Real-time video intelligence:** Webcam → FFmpeg → MediaMTX (RTSP) → Frigate (AI detection) → MQTT → Rust CLI
 
-## ✨ Features
-
+✨ Features
 - 🎯 Real-time object detection (person, car, etc.)
 - 📹 Webcam streaming via FFmpeg
 - 🔔 Live event notifications via MQTT
@@ -11,20 +11,20 @@
 - 🌐 Web UI for video playback and events
 - 🐳 One-command Docker deployment
 
-## 🚀 Quick Start
+🚀 Quick Start
 
-### 1. Start Infrastructure
+1. Start Infrastructure
 
 ```bash
-cd video-intel
+cd VidOxide
 make up
 ```
 
 Starts: Mosquitto (MQTT), MediaMTX (RTSP), Frigate (AI)
 
-### 2. Stream Your Webcam
+2. Stream Your Webcam
 
-**macOS:**
+macOS:
 ```bash
 ffmpeg -f avfoundation -framerate 30 -pixel_format uyvy422 -i "0:0" \
   -vf scale=-2:720 -r 15 \
@@ -32,7 +32,7 @@ ffmpeg -f avfoundation -framerate 30 -pixel_format uyvy422 -i "0:0" \
   -f rtsp -rtsp_transport tcp rtsp://localhost:8554/demo
 ```
 
-**Linux:**
+Linux:
 ```bash
 ffmpeg -f v4l2 -framerate 30 -video_size 1280x720 -i /dev/video0 \
   -vf scale=-2:720 -r 15 \
@@ -40,9 +40,9 @@ ffmpeg -f v4l2 -framerate 30 -video_size 1280x720 -i /dev/video0 \
   -f rtsp -rtsp_transport tcp rtsp://localhost:8554/demo
 ```
 
-**Keep this terminal running!**
+Keep this terminal running!
 
-### 3. Restart Frigate & Run CLI
+3. Restart Frigate & Run CLI
 
 ```bash
 # Wait 10 seconds after starting FFmpeg, then:
@@ -53,7 +53,7 @@ sleep 15
 make cli
 ```
 
-### 4. See Detections!
+4. See Detections!
 
 Move in front of your webcam:
 ```
@@ -62,27 +62,26 @@ update: person on demo (id=1760664012.618671-12580m)
 end: person on demo (id=1760664012.618671-12580m)
 ```
 
-## 🌐 Access Points
+🌐 Access Points
+- Frigate UI: http://localhost:5000
+- MQTT Broker: localhost:1883
+- RTSP Stream: rtsp://localhost:8554/demo
 
-- **Frigate UI**: http://localhost:5000
-- **MQTT Broker**: localhost:1883
-- **RTSP Stream**: rtsp://localhost:8554/demo
+📦 What's Included
 
-## 📦 What's Included
+Docker Services
+- MediaMTX - RTSP server (port 8554)
+- Mosquitto - MQTT broker (port 1883)
+- Frigate - AI object detection (port 5000)
 
-### Docker Services
-- **MediaMTX** - RTSP server (port 8554)
-- **Mosquitto** - MQTT broker (port 1883)  
-- **Frigate** - AI object detection (port 5000)
+Rust Applications
+- frigate-cli - Event notification CLI
+- frigate-agent - Web service with health checks
 
-### Rust Applications
-- **frigate-cli** - Event notification CLI
-- **frigate-agent** - Web service with health checks
-
-## 📁 Structure
+📁 Structure
 
 ```
-video-intel/
+VidOxide/
 ├── compose/              # Docker configs
 │   ├── docker-compose.yml
 │   ├── frigate.yml
@@ -96,54 +95,51 @@ video-intel/
 └── WEBCAM_SETUP.md       # Platform-specific guide
 ```
 
-## 🛠️ Commands
+🛠️ Commands
 
 ```bash
 make up       # Start Docker services
-make down     # Stop and remove services  
+make down     # Stop and remove services
 make logs     # View all logs
 make cli      # Run Rust CLI event viewer
 make agent    # Run Rust agent service
 ```
 
-## ⚙️ Configuration
+⚙️ Configuration
 
-- **Frigate**: `compose/frigate.yml` - Camera settings, object detection
-- **MediaMTX**: `compose/mediamtx.yml` - RTSP paths
-- **MQTT**: `compose/mosquitto-no-auth.conf` - Broker config
+- Frigate: compose/frigate.yml - Camera settings, object detection
+- MediaMTX: compose/mediamtx.yml - RTSP paths
+- MQTT: compose/mosquitto-no-auth.conf - Broker config
 
-## 🔧 Troubleshooting
+🔧 Troubleshooting
 
-### No video in Frigate UI
+No video in Frigate UI
 1. Check FFmpeg is running: `ps aux | grep ffmpeg`
 2. Verify stream: `ffplay rtsp://localhost:8554/demo`
 3. Restart Frigate: `docker restart vi_frigate`
 
-### No detection events
+No detection events
 1. Open http://localhost:5000 - verify live video
 2. Move visibly for 3-5 seconds (CPU detection is slow)
 3. Check objects tracked in `compose/frigate.yml`
 
-### Camera permission (macOS)
+Camera permission (macOS)
 System Settings → Privacy & Security → Camera → Enable Terminal
 
-## 📚 Documentation
+📚 Documentation
+- START_HERE.md - Complete walkthrough
+- WEBCAM_SETUP.md - Platform guides
+- TEST_COMMANDS.md - Testing steps
+- docs/ - Architecture & troubleshooting
 
-- [START_HERE.md](START_HERE.md) - Complete walkthrough
-- [WEBCAM_SETUP.md](WEBCAM_SETUP.md) - Platform guides
-- [TEST_COMMANDS.md](TEST_COMMANDS.md) - Testing steps
-- [docs/](docs/) - Architecture & troubleshooting
-
-## 🎯 Use Cases
-
+🎯 Use Cases
 - Real-time security monitoring
-- Pet activity tracking  
+- Pet activity tracking
 - Smart home automation triggers
 - Occupancy detection
 - Event logging and analytics
 
-## 🚧 Roadmap
-
+🚧 Roadmap
 - [ ] Multi-camera support
 - [ ] SQLite event storage
 - [ ] Prometheus metrics
@@ -152,24 +148,22 @@ System Settings → Privacy & Security → Camera → Enable Terminal
 - [ ] Push notifications
 - [ ] Cloud storage integration
 
-## 📄 License
-
+📄 License
 MIT
 
 ---
 
-**Status:** ✅ Production ready | Built with Rust 🦀 + Docker 🐳 + AI 🤖
+Status: ✅ Production ready | Built with Rust 🦀 + Docker 🐳 + AI 🤖
 
-## 📋 Roadmap
+Roadmap (high level)
+- M0: ✅ Boot stack + CLI (current)
+- M1: Agent v0.1 (thumbnails, /healthz, Prometheus metrics)
+- M2: Storage & rules (SQLite/Postgres, S3, event deduplication)
+- M3: Ops hardening (CI, auth, TLS, Grafana dashboards)
 
-- **M0**: ✅ Boot stack + CLI (current)
-- **M1**: Agent v0.1 (thumbnails, /healthz, Prometheus metrics)
-- **M2**: Storage & rules (SQLite/Postgres, S3, event deduplication)
-- **M3**: Ops hardening (CI, auth, TLS, Grafana dashboards)
+See docs/ROADMAP.md for details.
 
-See [docs/ROADMAP.md](docs/ROADMAP.md) for details.
-
-## 🏗️ Architecture
+🏗️ Architecture
 
 ```
 FFmpeg (demo.mp4 loop)
@@ -186,9 +180,9 @@ Mosquitto (:1883)
 └───────────────────┘
 ```
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for system design.
+See docs/ARCHITECTURE.md for system design.
 
-## 🧪 Testing
+🧪 Testing
 
 ```bash
 # Check logs for detection events
@@ -201,27 +195,19 @@ ffplay rtsp://localhost:8554/demo
 curl http://localhost:5000/api/events
 ```
 
-## 🛑 Stop & Clean
+🛑 Stop & Clean
 
 ```bash
 make down  # stops containers + removes volumes
 ```
 
-## 📝 Notes
+📝 Notes
+- No auth on MQTT/Frigate for MVP (add in M3)
+- Sample video: 640x360 MP4 from filesamples.com
+- Detection: Frigate uses CPU inference (add GPU in M2)
+- Persistence: Events in-memory only (add DB in M2)
 
-- **No auth** on MQTT/Frigate for MVP (add in M3)
-- **Sample video**: 640x360 MP4 from filesamples.com
-- **Detection**: Frigate uses CPU inference (add GPU in M2)
-- **Persistence**: Events in-memory only (add DB in M2)
-
-## 📚 Documentation
-
-- [Architecture](docs/ARCHITECTURE.md)
-- [Roadmap](docs/ROADMAP.md)
-- [Runbooks](docs/RUNBOOKS.md)
-- [Troubleshooting](docs/TROUBLESHOOTING.md)
-
-## 🤝 Contributing
+🤝 Contributing
 
 1. Fork the repo
 2. Create feature branch (`git checkout -b feat/amazing`)
@@ -229,11 +215,11 @@ make down  # stops containers + removes volumes
 4. Push to branch (`git push origin feat/amazing`)
 5. Open Pull Request
 
-## 📄 License
+📄 License
 
 MIT
 
 ---
 
-**Built for real-time video intelligence at scale.**
-# video-intel
+Built for real-time video intelligence at scale.
+```
