@@ -50,7 +50,6 @@ async fn main() -> Result<()> {
     let mut mqttoptions = MqttOptions::new(&client_id, &args.broker_host, args.broker_port);
     mqttoptions.set_keep_alive(Duration::from_secs(5));
     mqttoptions.set_clean_session(true);
-    mqttoptions.set_connection_timeout(10);
     
     if args.verbose {
         println!("🔧 Client ID: {}", client_id);
