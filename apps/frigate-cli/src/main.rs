@@ -50,19 +50,32 @@ async fn main() -> Result<()> {
     mqttoptions.set_keep_alive(Duration::from_secs(30));
     
     let (client, mut eventloop) = AsyncClient::new(mqttoptions, 10);
-    client.subscribe(&args.topic, QoS::AtLeastOnce).await?;
-
-    println!("📡 Subscribed to {}:{} topic '{}'", args.broker_host, args.broker_port, args.topic);
-    println!("🔍 Listening for Frigate events...\n");
+    
+    println!("🔌 Connecting to MQTT broker at {}:{}...", args.broker_host, args.broker_port);
+    
+    let mut connected = false;
+    let mut message_count = 0u64;
     
     loop {
         match eventloop.poll().await {
+            Ok(Event::Incoming(Packet::ConnAck(_))) => {
+                println!("✅ Connected to MQTT broker");
+                client.subscribe(&args.topic, QoS::AtLeastOnce).await?;
+                println!("📡 Subscribed to topic '{}'", args.topic);
+                println!("🔍 Listening for Frigate events...\n");
+                connected = true;
+            }
             Ok(Event::Incoming(Packet::Publish(p))) => {
+                message_count += 1;
+                if !connected {
+                    connected = true;
+                }
                 let topic = p.topic.clone();
+                let payload_size = p.payload.len();
                 
                 // Show all topics if verbose
                 if args.verbose {
-                    println!("📬 Topic: {}", topic);
+                    println!("📬 Topic: {} ({} bytes)", topic, payload_size);
                 }
                 
                 // Parse event data
@@ -98,6 +111,8 @@ async fn main() -> Result<()> {
                         // Show raw JSON if parsing fails
                         if let Ok(json) = serde_json::from_slice::<Value>(&p.payload) {
                             println!("⚠️  Unparseable event: {}", serde_json::to_string_pretty(&json).unwrap_or_default());
+                        } else {
+                            println!("⚠️  Non-JSON payload on {}", topic);
                         }
                     }
                 } else if topic.contains("/detection") {
@@ -111,13 +126,21 @@ async fn main() -> Result<()> {
                 } else if args.verbose {
                     // Other topics (stats, etc)
                     if let Ok(text) = std::str::from_utf8(&p.payload) {
-                        println!("📊 {}: {}", topic, text);
+                        println!("📊 {}: {}", topic, text.trim());
+                    } else {
+                        println!("📊 {} [binary: {} bytes]", topic, payload_size);
                     }
+                }
+            }
+            Ok(Event::Incoming(Packet::PingResp)) => {
+                if args.verbose {
+                    println!("💓 Keepalive (msgs: {})", message_count);
                 }
             }
             Ok(_) => {}
             Err(e) => {
                 eprintln!("❌ MQTT error: {e}");
+                connected = false;
                 tokio::time::sleep(Duration::from_secs(5)).await;
             }
         }
