@@ -10,7 +10,7 @@ cameras:
   demo:
     ffmpeg:
       inputs:
-        - path: rtsp://172.20.0.1:8554/demo  # Docker gateway IP to access host MediaMTX
+        - path: rtsp://vi_mediamtx:8554/demo
           roles: [detect, record]
     detect:
       enabled: true
