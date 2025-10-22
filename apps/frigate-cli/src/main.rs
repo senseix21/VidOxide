@@ -48,6 +48,7 @@ async fn main() -> Result<()> {
     
     let mut mqttoptions = MqttOptions::new("frigate_cli", &args.broker_host, args.broker_port);
     mqttoptions.set_keep_alive(Duration::from_secs(30));
+    mqttoptions.set_clean_session(true);
     
     let (client, mut eventloop) = AsyncClient::new(mqttoptions, 10);
     
@@ -60,7 +61,9 @@ async fn main() -> Result<()> {
         match eventloop.poll().await {
             Ok(Event::Incoming(Packet::ConnAck(_))) => {
                 println!("✅ Connected to MQTT broker");
+                tokio::time::sleep(Duration::from_millis(100)).await;
                 client.subscribe(&args.topic, QoS::AtLeastOnce).await?;
+                tokio::time::sleep(Duration::from_millis(100)).await;
                 println!("📡 Subscribed to topic '{}'", args.topic);
                 println!("🔍 Listening for Frigate events...\n");
                 connected = true;
