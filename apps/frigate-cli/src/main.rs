@@ -46,11 +46,18 @@ struct FrigateEventData {
 async fn main() -> Result<()> {
     let args = Args::parse();
     
-    let mut mqttoptions = MqttOptions::new("frigate_cli", &args.broker_host, args.broker_port);
-    mqttoptions.set_keep_alive(Duration::from_secs(30));
+    let client_id = format!("frigate_cli_{}", std::process::id());
+    let mut mqttoptions = MqttOptions::new(&client_id, &args.broker_host, args.broker_port);
+    mqttoptions.set_keep_alive(Duration::from_secs(5));
     mqttoptions.set_clean_session(true);
+    mqttoptions.set_connection_timeout(10);
     
-    let (client, mut eventloop) = AsyncClient::new(mqttoptions, 10);
+    if args.verbose {
+        println!("🔧 Client ID: {}", client_id);
+        println!("🔧 Broker: {}:{}", args.broker_host, args.broker_port);
+    }
+    
+    let (client, mut eventloop) = AsyncClient::new(mqttoptions, 100);
     
     println!("🔌 Connecting to MQTT broker at {}:{}...", args.broker_host, args.broker_port);
     
@@ -60,11 +67,19 @@ async fn main() -> Result<()> {
     loop {
         match eventloop.poll().await {
             Ok(Event::Incoming(Packet::ConnAck(_))) => {
-                println!("✅ Connected to MQTT broker");
+                if args.verbose {
+                    println!("✅ Connected to MQTT broker");
+                } else {
+                    println!("✅ Connected to MQTT broker");
+                }
                 tokio::time::sleep(Duration::from_millis(100)).await;
-                client.subscribe(&args.topic, QoS::AtLeastOnce).await?;
-                tokio::time::sleep(Duration::from_millis(100)).await;
-                println!("📡 Subscribed to topic '{}'", args.topic);
+                client.subscribe(&args.topic, QoS::AtMostOnce).await?;
+                tokio::time::sleep(Duration::from_millis(500)).await;
+                if args.verbose {
+                    println!("📡 Subscribed to topic '{}' with QoS 0", args.topic);
+                } else {
+                    println!("📡 Subscribed to topic '{}'", args.topic);
+                }
                 println!("🔍 Listening for Frigate events...\n");
                 connected = true;
             }
