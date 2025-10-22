@@ -115,6 +115,17 @@ async fn main() -> Result<()> {
                             println!("⚠️  Non-JSON payload on {}", topic);
                         }
                     }
+                } else if topic.contains("/detection_status") {
+                    // No detection status messages
+                    if let Ok(json) = serde_json::from_slice::<Value>(&p.payload) {
+                        if let Some(status) = json.get("status").and_then(|v| v.as_str()) {
+                            if status == "idle" {
+                                let camera = json.get("camera").and_then(|v| v.as_str()).unwrap_or("unknown");
+                                let last = json.get("last_detection").and_then(|v| v.as_str()).unwrap_or("never");
+                                println!("💤 {} - No objects detected (last: {})", camera, last);
+                            }
+                        }
+                    }
                 } else if topic.contains("/detection") {
                     // Detection data (raw objects detected)
                     if let Ok(json) = serde_json::from_slice::<Value>(&p.payload) {
