@@ -1,4 +1,3 @@
-```markdown
 # VidOxide
 
 **Real-time video intelligence:** Webcam → FFmpeg → MediaMTX (RTSP) → Frigate (AI detection) → MQTT → Rust CLI
